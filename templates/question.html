@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Вопрос {{ index }}/{{ total }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <main class="container">
+    <div class="card">
+      <div class="meta">Вопрос {{ index }} / {{ total }} (№{{ q.question_number }})</div>
+      <h2>{{ q.question }}</h2>
+      <form method="post" action="/answer">
+        {% for opt in q.options %}
+        <label class="option"><input required type="radio" name="answer" value="{{ loop.index0 }}" /> {{ opt }}</label>
+        {% endfor %}
+        <button type="submit">Ответить</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>
