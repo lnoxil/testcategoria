@@ -213,4 +213,5 @@ def result():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # 0.0.0.0 нужен для доступа с телефона в той же Wi‑Fi сети
+    app.run(host="0.0.0.0", port=5000, debug=True)
