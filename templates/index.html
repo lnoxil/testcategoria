@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Тесты ТБ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <main class="container">
+    <h1>Тесты по транспортной безопасности</h1>
+    <p>Всего вопросов в базе: <b>{{ total }}</b></p>
+    <p>Вопросов в тренировке над ошибками: <b>{{ mistakes }}</b></p>
+
+    <form method="post" action="/start" class="card">
+      <input type="hidden" name="mode" value="common" />
+      <button type="submit">Начать общий тест (50 вопросов)</button>
+    </form>
+
+    <form method="post" action="/start" class="card">
+      <input type="hidden" name="mode" value="mistakes" />
+      <button type="submit">Начать тест над ошибками</button>
+    </form>
+  </main>
+</body>
+</html>
