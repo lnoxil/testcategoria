@@ -18,7 +18,16 @@ button, .btn { background: #2563eb; color: #fff; border: 0; border-radius: 8px; 
 .tracker-cell.cell-ok { background: #15803d; border-color: #15803d; }
 .tracker-cell.cell-bad { background: #b91c1c; border-color: #b91c1c; }
 
+.daily-grid { display: grid; gap: 8px; margin-bottom: 12px; }
+.daily-row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; align-items: center; }
+.date { color: #cbd5e1; font-size: 14px; }
+.bars { display: grid; gap: 6px; }
+.bar { border-radius: 6px; padding: 3px 8px; font-size: 12px; white-space: nowrap; }
+.bar.blue { background: #1d4ed8; }
+.bar.red { background: #dc2626; }
+
 @media (max-width: 1024px) {
   .layout { grid-template-columns: 1fr; }
   .tracker { position: static; }
+  .daily-row { grid-template-columns: 1fr; }
 }

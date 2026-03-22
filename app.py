@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import random
+from datetime import date
 from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for, session
 
@@ -27,7 +28,8 @@ def save_stats(stats: dict) -> None:
 
 def build_analytics() -> dict:
     stats = load_stats()
-    attempts_50 = [a for a in stats.get("attempts", []) if a.get("size") == 50]
+    attempts = stats.get("attempts", [])
+    attempts_50 = [a for a in attempts if a.get("size") == 50]
     avg_50 = round(sum(a.get("percent", 0) for a in attempts_50) / len(attempts_50), 2) if attempts_50 else 0
 
     mistake_counts = stats.get("mistake_counts", {})
@@ -37,13 +39,38 @@ def build_analytics() -> dict:
         qid = int(qid_str)
         q = QUESTIONS_BY_ID.get(qid)
         if q:
-            top_mistakes.append({
-                "question_number": qid,
-                "count": mistake_counts[qid_str],
-                "question": q["question"],
-            })
+            top_mistakes.append(
+                {
+                    "question_number": qid,
+                    "count": mistake_counts[qid_str],
+                    "question": q["question"],
+                }
+            )
 
-    return {"avg_percent_50": avg_50, "top_mistakes": top_mistakes, "attempts_total": len(stats.get("attempts", []))}
+    by_day = {}
+    for a in attempts:
+        d = a.get("date", "unknown")
+        row = by_day.setdefault(d, {"percent_sum": 0, "wrong_sum": 0, "count": 0})
+        row["percent_sum"] += a.get("percent", 0)
+        row["wrong_sum"] += a.get("wrong", 0)
+        row["count"] += 1
+
+    daily_progress = []
+    for d in sorted(by_day.keys()):
+        row = by_day[d]
+        avg_percent = round(row["percent_sum"] / row["count"], 2)
+        avg_wrong = round(row["wrong_sum"] / row["count"], 2)
+        daily_progress.append({"date": d, "avg_percent": avg_percent, "avg_wrong": avg_wrong})
+
+    persistent_mistakes_count = sum(1 for _, v in mistake_counts.items() if v > 0)
+
+    return {
+        "avg_percent_50": avg_50,
+        "top_mistakes": top_mistakes,
+        "attempts_total": len(attempts),
+        "daily_progress": daily_progress,
+        "persistent_mistakes_count": persistent_mistakes_count,
+    }
 
 
 QUESTIONS = load_questions()
@@ -66,7 +93,10 @@ def start_test():
     mode = request.form.get("mode", "common_50")
 
     if mode == "mistakes":
-        ids = session.get("mistakes", [])
+        stats = load_stats()
+        persistent_ids = [int(k) for k, v in stats.get("mistake_counts", {}).items() if v > 0]
+        session_ids = session.get("mistakes", [])
+        ids = sorted(set(persistent_ids + session_ids))
         pool = [QUESTIONS_BY_ID[i] for i in ids if i in QUESTIONS_BY_ID]
         random.shuffle(pool)
     else:
@@ -99,7 +129,7 @@ def list_test():
     if not test_ids:
         return redirect(url_for("home"))
     questions = [QUESTIONS_BY_ID[qid] for qid in test_ids if qid in QUESTIONS_BY_ID]
-    return render_template("list_test.html", questions=questions)
+    return render_template("list_test.html", questions=questions, mode=session.get("mode", "common_50"))
 
 
 @app.post("/submit_list")
@@ -142,13 +172,16 @@ def submit_list():
     percent = round((correct / total) * 100) if total else 0
 
     stats = load_stats()
-    stats.setdefault("attempts", []).append({
-        "size": total,
-        "percent": percent,
-        "correct": correct,
-        "wrong": total - correct,
-        "mode": session.get("mode", "common_50"),
-    })
+    stats.setdefault("attempts", []).append(
+        {
+            "date": date.today().isoformat(),
+            "size": total,
+            "percent": percent,
+            "correct": correct,
+            "wrong": total - correct,
+            "mode": session.get("mode", "common_50"),
+        }
+    )
     stats.setdefault("mistake_counts", {})
     for qid in wrong_ids:
         key = str(qid)

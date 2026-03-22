@@ -11,6 +11,8 @@
     <section>
       <h1>Тест списком</h1>
       <p>После выбора вариант фиксируется и изменить ответ уже нельзя.</p>
+      <p><b>Режим:</b> {{ 'Тест над ошибками' if mode == 'mistakes' else ('Быстрый 20' if mode == 'quick_20' else 'Общий 50') }}</p>
+      <p><b>Счетчик:</b> <span id="answeredCount">0</span> / {{ questions|length }}</p>
 
       <form method="post" action="/submit_list" id="listForm">
         {% for q in questions %}
@@ -45,6 +47,9 @@
 
   <script>
     const cards = document.querySelectorAll('.question-card');
+    const answeredCountEl = document.getElementById('answeredCount');
+    let answeredCount = 0;
+
     cards.forEach((card) => {
       const correct = Number(card.dataset.correct);
       const idx = Number(card.dataset.idx);
@@ -59,8 +64,10 @@
           card.classList.remove('ok', 'bad');
           cell.classList.remove('unanswered', 'cell-ok', 'cell-bad');
 
-          // фиксируем ответ: после первого выбора изменить нельзя
           card.dataset.locked = '1';
+          answeredCount += 1;
+          answeredCountEl.textContent = String(answeredCount);
+
           radios.forEach((r) => { if (r !== radio) r.disabled = true; });
 
           if (selected === correct) {
