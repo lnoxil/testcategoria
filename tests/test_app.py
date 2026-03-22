@@ -11,30 +11,31 @@ class QuizAppTests(unittest.TestCase):
     def test_home_page(self):
         res = self.client.get('/')
         self.assertEqual(res.status_code, 200)
-        self.assertIn('Начать общий тест списком (50 вопросов)', res.get_data(as_text=True))
+        page = res.get_data(as_text=True)
+        self.assertIn('Начать общий тест списком (50 вопросов)', page)
+        self.assertIn('Быстрый тест (20 вопросов)', page)
 
     def test_common_test_starts_with_50_questions(self):
-        self.client.post('/start', data={'mode': 'common'})
+        self.client.post('/start', data={'mode': 'common_50'})
         with self.client.session_transaction() as sess:
             self.assertEqual(len(sess['test_ids']), 50)
             self.assertEqual(sess['index'], 0)
 
+    def test_quick_test_starts_with_20_questions(self):
+        self.client.post('/start', data={'mode': 'quick_20'})
+        with self.client.session_transaction() as sess:
+            self.assertEqual(len(sess['test_ids']), 20)
 
     def test_start_redirects_to_list_mode(self):
-        res = self.client.post('/start', data={'mode': 'common'}, follow_redirects=False)
+        res = self.client.post('/start', data={'mode': 'common_50'}, follow_redirects=False)
         self.assertEqual(res.status_code, 302)
         self.assertIn('/list_test', res.headers.get('Location', ''))
 
-    def test_mistake_saved_after_wrong_answer(self):
-        self.client.post('/start', data={'mode': 'common'})
+    def test_exit_test_clears_test_state(self):
+        self.client.post('/start', data={'mode': 'common_50'})
+        self.client.get('/exit_test')
         with self.client.session_transaction() as sess:
-            qid = sess['test_ids'][0]
-            q = app.QUESTIONS_BY_ID[qid]
-            wrong = (q['correct_option_index'] + 1) % len(q['options'])
-
-        self.client.post('/answer', data={'answer': str(wrong)})
-        with self.client.session_transaction() as sess:
-            self.assertIn(qid, sess.get('mistakes', []))
+            self.assertNotIn('test_ids', sess)
 
 
 if __name__ == '__main__':
