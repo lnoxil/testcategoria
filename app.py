@@ -217,12 +217,16 @@ if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("DEBUG", "0") == "1"
-    # По умолчанию включаем HTTPS, т.к. некоторые телефоны принудительно используют TLS
-    use_https = os.getenv("USE_HTTPS", "1") == "1"
+    # По умолчанию HTTP. Для HTTPS включите USE_HTTPS=1
+    use_https = os.getenv("USE_HTTPS", "0") == "1"
 
     # Если телефон принудительно открывает HTTPS, можно запустить с self-signed TLS:
     # USE_HTTPS=1 python app.py
     if use_https:
-        app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
+        try:
+            app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
+        except TypeError as exc:
+            print("[WARN] HTTPS (adhoc) требует пакет cryptography. Переходим на HTTP. Ошибка:", exc)
+            app.run(host=host, port=port, debug=debug)
     else:
         app.run(host=host, port=port, debug=debug)
