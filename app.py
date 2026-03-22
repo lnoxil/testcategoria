@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 from datetime import date
 from pathlib import Path
@@ -213,5 +214,14 @@ def result():
 
 
 if __name__ == "__main__":
-    # 0.0.0.0 нужен для доступа с телефона в той же Wi‑Fi сети
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "5000"))
+    debug = os.getenv("DEBUG", "0") == "1"
+    use_https = os.getenv("USE_HTTPS", "0") == "1"
+
+    # Если телефон принудительно открывает HTTPS, можно запустить с self-signed TLS:
+    # USE_HTTPS=1 python app.py
+    if use_https:
+        app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
+    else:
+        app.run(host=host, port=port, debug=debug)
