@@ -1,0 +1,13 @@
+:root { font-family: Inter, Arial, sans-serif; }
+body { margin: 0; background: #111827; color: #f9fafb; }
+.container { max-width: 860px; margin: 0 auto; padding: 24px; }
+.controls { display: grid; gap: 12px; grid-template-columns: repeat(3,minmax(0,1fr)); margin-bottom: 20px; }
+label { display: grid; gap: 6px; font-size: 14px; }
+select,input,button { padding: 10px; border-radius: 8px; border: 1px solid #374151; background:#1f2937; color:#fff; }
+button { cursor:pointer; }
+.hidden { display:none; }
+#quiz { background:#1f2937; border-radius:12px; padding:16px; }
+.option { display:block; margin:10px 0; padding:10px; border:1px solid #374151; border-radius:8px; }
+.quiz-actions { margin-top: 12px; }
+.good { color:#34d399; }
+.bad { color:#f87171; }
