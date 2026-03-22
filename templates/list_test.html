@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Тест списком</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <main class="container layout">
+    <section>
+      <h1>Тест списком</h1>
+      <p>После выбора вариант фиксируется и изменить ответ уже нельзя.</p>
+      <p><b>Режим:</b> {{ 'Тест над ошибками' if mode == 'mistakes' else ('Быстрый 20' if mode == 'quick_20' else 'Общий 50') }}</p>
+      <p><b>Счетчик:</b> <span id="answeredCount">0</span> / {{ questions|length }}</p>
+
+      <form method="post" action="/submit_list" id="listForm">
+        {% for q in questions %}
+        <section class="card question-card" data-correct="{{ q.correct_option_index }}" data-idx="{{ loop.index }}" id="question-{{ loop.index }}">
+          <div class="meta">Вопрос {{ loop.index }} (№{{ q.question_number }})</div>
+          <h3>{{ q.question }}</h3>
+
+          {% for opt in q.options %}
+          <label class="option">
+            <input type="radio" name="q_{{ q.question_number }}" value="{{ loop.index0 }}" /> {{ opt }}
+          </label>
+          {% endfor %}
+
+          <div class="feedback" aria-live="polite"></div>
+        </section>
+        {% endfor %}
+
+        <button type="submit">Завершить тест</button>
+        <a class="btn" href="/exit_test">Выйти из теста</a>
+      </form>
+    </section>
+
+    <aside class="card tracker">
+      <h3>Панель вопросов</h3>
+      <div class="tracker-grid">
+        {% for q in questions %}
+          <a href="#question-{{ loop.index }}" class="tracker-cell unanswered" id="cell-{{ loop.index }}">{{ loop.index }}</a>
+        {% endfor %}
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const cards = document.querySelectorAll('.question-card');
+    const answeredCountEl = document.getElementById('answeredCount');
+    let answeredCount = 0;
+
+    cards.forEach((card) => {
+      const correct = Number(card.dataset.correct);
+      const idx = Number(card.dataset.idx);
+      const feedback = card.querySelector('.feedback');
+      const cell = document.getElementById(`cell-${idx}`);
+      const radios = card.querySelectorAll('input[type="radio"]');
+
+      radios.forEach((radio) => {
+        radio.addEventListener('change', () => {
+          if (card.dataset.locked === '1') return;
+          const selected = Number(radio.value);
+          card.classList.remove('ok', 'bad');
+          cell.classList.remove('unanswered', 'cell-ok', 'cell-bad');
+
+          card.dataset.locked = '1';
+          answeredCount += 1;
+          answeredCountEl.textContent = String(answeredCount);
+
+          radios.forEach((r) => { if (r !== radio) r.disabled = true; });
+
+          if (selected === correct) {
+            card.classList.add('ok');
+            cell.classList.add('cell-ok');
+            radio.parentElement.classList.add('option-ok');
+            feedback.textContent = '✅ Верно';
+          } else {
+            card.classList.add('bad');
+            cell.classList.add('cell-bad');
+            radio.parentElement.classList.add('option-bad');
+            feedback.textContent = `❌ Неверно. Правильный вариант: ${correct + 1}`;
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

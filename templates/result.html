@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Результат</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <main class="container">
+    <div class="card">
+      <h1>Результат теста</h1>
+      <p>Правильных: <b>{{ correct }}</b> из <b>{{ total }}</b> ({{ percent }}%).</p>
+      <p>Ошибок: <b>{{ wrong }}</b>.</p>
+      <p>Всего вопросов в «над ошибками»: <b>{{ mistakes }}</b>.</p>
+      <a class="btn" href="/">На главную</a>
+    </div>
+  </main>
+</body>
+</html>
