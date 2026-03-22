@@ -11,6 +11,8 @@ app = Flask(__name__)
 app.secret_key = "transport-safety-secret"
 DATA_PATH = Path(__file__).parent / "data" / "questions.json"
 STATS_PATH = Path(__file__).parent / "data" / "user_stats.json"
+CERT_PATH = Path(__file__).parent / "cert.pem"
+KEY_PATH = Path(__file__).parent / "cert_key.pem"
 
 
 def load_questions() -> list[dict]:
@@ -217,16 +219,13 @@ if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("DEBUG", "0") == "1"
-    # По умолчанию HTTP. Для HTTPS включите USE_HTTPS=1
-    use_https = os.getenv("USE_HTTPS", "0") == "1"
+    # По умолчанию HTTPS для удобного доступа с телефона
+    use_https = os.getenv("USE_HTTPS", "1") == "1"
 
-    # Если телефон принудительно открывает HTTPS, можно запустить с self-signed TLS:
-    # USE_HTTPS=1 python app.py
-    if use_https:
-        try:
-            app.run(host=host, port=port, debug=debug, ssl_context="adhoc")
-        except TypeError as exc:
-            print("[WARN] HTTPS (adhoc) требует пакет cryptography. Переходим на HTTP. Ошибка:", exc)
-            app.run(host=host, port=port, debug=debug)
+    if use_https and CERT_PATH.exists() and KEY_PATH.exists():
+        app.run(host=host, port=port, debug=debug, ssl_context=(str(CERT_PATH), str(KEY_PATH)))
+    elif use_https:
+        print("[WARN] Не найдены cert.pem/cert_key.pem. Запускаем HTTP. Для HTTPS добавьте сертификаты.")
+        app.run(host=host, port=port, debug=debug)
     else:
         app.run(host=host, port=port, debug=debug)
