@@ -37,6 +37,12 @@ class QuizAppTests(unittest.TestCase):
         with self.client.session_transaction() as sess:
             self.assertNotIn('test_ids', sess)
 
+    def test_editor_page_loads(self):
+        res = self.client.get('/editor')
+        self.assertEqual(res.status_code, 200)
+        page = res.get_data(as_text=True)
+        self.assertIn('Редактор тестов', page)
+
 
 if __name__ == '__main__':
     unittest.main()

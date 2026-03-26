@@ -19,6 +19,10 @@ def load_questions() -> list[dict]:
     return json.loads(DATA_PATH.read_text(encoding="utf-8"))
 
 
+def save_questions(questions: list[dict]) -> None:
+    DATA_PATH.write_text(json.dumps(questions, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def load_stats() -> dict:
     if not STATS_PATH.exists():
         return {"attempts": [], "mistake_counts": {}}
@@ -80,6 +84,12 @@ QUESTIONS = load_questions()
 QUESTIONS_BY_ID = {q["question_number"]: q for q in QUESTIONS}
 
 
+def refresh_questions_cache() -> None:
+    global QUESTIONS, QUESTIONS_BY_ID
+    QUESTIONS = load_questions()
+    QUESTIONS_BY_ID = {q["question_number"]: q for q in QUESTIONS}
+
+
 @app.route("/")
 def home():
     analytics = build_analytics()
@@ -89,6 +99,47 @@ def home():
         mistakes=len(session.get("mistakes", [])),
         analytics=analytics,
     )
+
+
+@app.get("/editor")
+def questions_editor():
+    questions = sorted(QUESTIONS, key=lambda x: x["question_number"])
+    return render_template("editor.html", questions=questions)
+
+
+@app.post("/editor/save")
+def save_questions_editor():
+    updated_questions = []
+    for q in sorted(QUESTIONS, key=lambda x: x["question_number"]):
+        qid = q["question_number"]
+        question_text = request.form.get(f"question_{qid}", q["question"]).strip()
+
+        updated_options = []
+        for idx, opt in enumerate(q.get("options", [])):
+            new_opt = request.form.get(f"option_{qid}_{idx}", opt).strip()
+            updated_options.append(new_opt)
+
+        raw_correct = request.form.get(f"correct_{qid}", str(q.get("correct_option_index", 0)))
+        try:
+            correct_idx = int(raw_correct)
+        except ValueError:
+            correct_idx = q.get("correct_option_index", 0)
+
+        if correct_idx < 0 or correct_idx >= len(updated_options):
+            correct_idx = 0 if updated_options else -1
+
+        updated_q = {
+            **q,
+            "question": question_text,
+            "options": updated_options,
+            "correct_option_index": correct_idx,
+            "correct_text": updated_options[correct_idx] if updated_options and correct_idx >= 0 else "",
+        }
+        updated_questions.append(updated_q)
+
+    save_questions(updated_questions)
+    refresh_questions_cache()
+    return redirect(url_for("questions_editor"))
 
 
 @app.post("/start")
