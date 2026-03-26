@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Редактор вопросов</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <main class="container">
+    <h1>Редактор тестов</h1>
+    <p>Здесь можно вручную изменить формулировки вопросов, варианты ответов и правильный ответ.</p>
+    <p><b>Всего вопросов:</b> {{ questions|length }}</p>
+
+    <section class="card">
+      <h3>Массовый импорт из текста</h3>
+      <p>Вставь блок формата «Вопрос N ... Выберите один ответ ... Правильный ответ ...», чтобы заменить/добавить вопросы автоматически.</p>
+      <form method="post" action="/editor/import">
+        <label>
+          <div>Категория</div>
+          <input type="text" name="import_category" value="5" />
+        </label>
+        <label>
+          <div>Название раздела</div>
+          <input type="text" name="import_section" value="Категория 5" />
+        </label>
+        <textarea name="bulk_text" rows="8" placeholder="Вставь сюда вопросы..."></textarea>
+        <button type="submit">Импортировать из текста</button>
+      </form>
+    </section>
+
+    <form method="post" action="/editor/save">
+      {% for q in questions %}
+      <section class="card editor-card">
+        <div class="meta">№{{ q.original_question_number or q.question_number }}</div>
+        <label>
+          <div>Формулировка вопроса</div>
+          <textarea name="question_{{ q.question_number }}" rows="3">{{ q.question }}</textarea>
+        </label>
+
+        <div class="editor-options">
+          {% for opt in q.options %}
+          <label class="editor-option">
+            <input
+              type="radio"
+              name="correct_{{ q.question_number }}"
+              value="{{ loop.index0 }}"
+              {% if loop.index0 == q.correct_option_index %}checked{% endif %}
+            />
+            <span>Правильный</span>
+            <input type="text" name="option_{{ q.question_number }}_{{ loop.index0 }}" value="{{ opt }}" />
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+
+      <div class="editor-actions">
+        <button type="submit">Сохранить изменения</button>
+        <a class="btn" href="/">На главную</a>
+      </div>
+    </form>
+  </main>
+</body>
+</html>

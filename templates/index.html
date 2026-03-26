@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Тесты ТБ</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <main class="container">
+    <h1>Тесты по транспортной безопасности</h1>
+    <p>Всего вопросов в базе: <b>{{ total }}</b></p>
+    <p>Вопросов в тренировке над ошибками (накопительно): <b>{{ analytics.persistent_mistakes_count }}</b></p>
+
+    <div class="card">
+      <h3>Аналитика</h3>
+      <p>Средний процент правильных ответов (тесты по 50): <b>{{ analytics.avg_percent_50 }}%</b></p>
+      <p>Всего завершённых тестов: <b>{{ analytics.attempts_total }}</b></p>
+
+      <h4>График прогресса по дням</h4>
+      <div class="daily-grid">
+        {% for d in analytics.daily_progress %}
+          <div class="daily-row">
+            <div class="date">{{ d.date }}</div>
+            <div class="bars">
+              <div class="bar blue" style="width: {{ d.avg_percent }}%">% {{ d.avg_percent }}</div>
+              <div class="bar red" style="width: {{ [d.avg_wrong * 10, 100] | min }}%">ошибки {{ d.avg_wrong }}</div>
+            </div>
+          </div>
+        {% else %}
+          <p>Пока нет завершенных тестов для графика.</p>
+        {% endfor %}
+      </div>
+
+      <h4>Вопросы, где больше всего ошибок:</h4>
+      <ol>
+        {% for item in analytics.top_mistakes %}
+        <li>№{{ item.question_number }} — ошибок: {{ item.count }}</li>
+        {% else %}
+        <li>Пока нет данных.</li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <form method="post" action="/start" class="card">
+      <input type="hidden" name="mode" value="common_50" />
+      <button type="submit">Начать общий тест списком (50 вопросов)</button>
+    </form>
+
+    <form method="post" action="/start" class="card">
+      <input type="hidden" name="mode" value="quick_20" />
+      <button type="submit">Быстрый тест (20 вопросов)</button>
+    </form>
+
+    <form method="post" action="/start" class="card">
+      <input type="hidden" name="mode" value="mistakes" />
+      <button type="submit">Начать тест над ошибками ({{ analytics.persistent_mistakes_count }})</button>
+    </form>
+
+    <div class="card">
+      <a class="btn" href="/editor">Открыть редактор вопросов</a>
+    </div>
+  </main>
+</body>
+</html>
