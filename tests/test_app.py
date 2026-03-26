@@ -12,27 +12,27 @@ class QuizAppTests(unittest.TestCase):
         res = self.client.get('/')
         self.assertEqual(res.status_code, 200)
         page = res.get_data(as_text=True)
-        self.assertIn('Начать общий тест списком (50 вопросов)', page)
-        self.assertIn('Быстрый тест (20 вопросов)', page)
+        self.assertIn('Категория 4', page)
+        self.assertIn('Категория 5', page)
 
     def test_common_test_starts_with_50_questions(self):
-        self.client.post('/start', data={'mode': 'common_50'})
+        self.client.post('/start', data={'mode': 'common_50', 'category': '5'})
         with self.client.session_transaction() as sess:
             self.assertEqual(len(sess['test_ids']), 50)
             self.assertEqual(sess['index'], 0)
 
     def test_quick_test_starts_with_20_questions(self):
-        self.client.post('/start', data={'mode': 'quick_20'})
+        self.client.post('/start', data={'mode': 'quick_20', 'category': '5'})
         with self.client.session_transaction() as sess:
             self.assertEqual(len(sess['test_ids']), 20)
 
     def test_start_redirects_to_list_mode(self):
-        res = self.client.post('/start', data={'mode': 'common_50'}, follow_redirects=False)
+        res = self.client.post('/start', data={'mode': 'common_50', 'category': '5'}, follow_redirects=False)
         self.assertEqual(res.status_code, 302)
         self.assertIn('/list_test', res.headers.get('Location', ''))
 
     def test_exit_test_clears_test_state(self):
-        self.client.post('/start', data={'mode': 'common_50'})
+        self.client.post('/start', data={'mode': 'common_50', 'category': '5'})
         self.client.get('/exit_test')
         with self.client.session_transaction() as sess:
             self.assertNotIn('test_ids', sess)

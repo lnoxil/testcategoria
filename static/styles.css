@@ -4,6 +4,7 @@ body { margin: 0; background: #0f172a; color: #e2e8f0; font-family: Arial, sans-
 .card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
 button, .btn { background: #2563eb; color: #fff; border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; text-decoration: none; display: inline-block; }
 textarea, input[type="text"] { width: 100%; box-sizing: border-box; margin-top: 6px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; padding: 8px; }
+select { width: 100%; box-sizing: border-box; margin-top: 6px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; padding: 8px; }
 .option { display: block; margin: 10px 0; padding: 4px; border-radius: 6px; }
 .option-ok { background: rgba(22, 163, 74, 0.25); }
 .option-bad { background: rgba(220, 38, 38, 0.25); }

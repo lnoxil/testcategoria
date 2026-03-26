@@ -11,6 +11,7 @@
     <section>
       <h1>Тест списком</h1>
       <p>После выбора вариант фиксируется и изменить ответ уже нельзя.</p>
+      <p><b>Категория:</b> {{ category }}</p>
       <p><b>Режим:</b> {{ 'Тест над ошибками' if mode == 'mistakes' else ('Быстрый 20' if mode == 'quick_20' else 'Общий 50') }}</p>
       <p><b>Счетчик:</b> <span id="answeredCount">0</span> / {{ questions|length }}</p>
 

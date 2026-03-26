@@ -238,16 +238,22 @@ def import_questions_editor():
 @app.post("/start")
 def start_test():
     mode = request.form.get("mode", "common_50")
+    raw_category = request.form.get("category", "5")
+    try:
+        selected_category = int(raw_category)
+    except ValueError:
+        selected_category = 5
+    category_pool = [q for q in QUESTIONS if q.get("category") == selected_category]
 
     if mode == "mistakes":
         stats = load_stats()
         persistent_ids = [int(k) for k, v in stats.get("mistake_counts", {}).items() if v > 0]
         session_ids = session.get("mistakes", [])
         ids = sorted(set(persistent_ids + session_ids))
-        pool = [QUESTIONS_BY_ID[i] for i in ids if i in QUESTIONS_BY_ID]
+        pool = [QUESTIONS_BY_ID[i] for i in ids if i in QUESTIONS_BY_ID and QUESTIONS_BY_ID[i].get("category") == selected_category]
         random.shuffle(pool)
     else:
-        pool = QUESTIONS[:]
+        pool = category_pool[:]
         random.shuffle(pool)
         limit = 20 if mode == "quick_20" else 50
         pool = pool[:limit]
@@ -260,12 +266,13 @@ def start_test():
     session["correct"] = 0
     session["answers"] = []
     session["mode"] = mode
+    session["category"] = selected_category
     return redirect(url_for("list_test"))
 
 
 @app.route("/exit_test")
 def exit_test():
-    for key in ["test_ids", "index", "correct", "answers", "mode"]:
+    for key in ["test_ids", "index", "correct", "answers", "mode", "category"]:
         session.pop(key, None)
     return redirect(url_for("home"))
 
@@ -276,7 +283,12 @@ def list_test():
     if not test_ids:
         return redirect(url_for("home"))
     questions = [QUESTIONS_BY_ID[qid] for qid in test_ids if qid in QUESTIONS_BY_ID]
-    return render_template("list_test.html", questions=questions, mode=session.get("mode", "common_50"))
+    return render_template(
+        "list_test.html",
+        questions=questions,
+        mode=session.get("mode", "common_50"),
+        category=session.get("category", 5),
+    )
 
 
 @app.post("/submit_list")
