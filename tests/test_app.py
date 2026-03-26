@@ -43,6 +43,20 @@ class QuizAppTests(unittest.TestCase):
         page = res.get_data(as_text=True)
         self.assertIn('Редактор тестов', page)
 
+    def test_parse_questions_from_text(self):
+        raw = (
+            "Вопрос 1\n"
+            "Тестовый вопрос?\n"
+            "Выберите один ответ:\n"
+            "a. вариант 1\n"
+            "b. вариант 2\n"
+            "Правильный ответ: вариант 2\n"
+        )
+        parsed = app.parse_questions_from_text(raw)
+        self.assertEqual(len(parsed), 1)
+        self.assertEqual(parsed[0]["question_number"], 1)
+        self.assertEqual(parsed[0]["correct_option_index"], 1)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,6 +12,15 @@
     <p>Здесь можно вручную изменить формулировки вопросов, варианты ответов и правильный ответ.</p>
     <p><b>Всего вопросов:</b> {{ questions|length }}</p>
 
+    <section class="card">
+      <h3>Массовый импорт из текста</h3>
+      <p>Вставь блок формата «Вопрос N ... Выберите один ответ ... Правильный ответ ...», чтобы заменить/добавить вопросы автоматически.</p>
+      <form method="post" action="/editor/import">
+        <textarea name="bulk_text" rows="8" placeholder="Вставь сюда вопросы..."></textarea>
+        <button type="submit">Импортировать из текста</button>
+      </form>
+    </section>
+
     <form method="post" action="/editor/save">
       {% for q in questions %}
       <section class="card editor-card">

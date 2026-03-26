@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import re
 from datetime import date
 from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for, session
@@ -90,6 +91,71 @@ def refresh_questions_cache() -> None:
     QUESTIONS_BY_ID = {q["question_number"]: q for q in QUESTIONS}
 
 
+def parse_questions_from_text(raw_text: str) -> list[dict]:
+    blocks = re.split(r"(?=Вопрос\s+\d+)", raw_text, flags=re.MULTILINE)
+    parsed = []
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
+        m_num = re.match(r"Вопрос\s+(\d+)", block)
+        if not m_num:
+            continue
+        qnum = int(m_num.group(1))
+
+        m_q = re.search(rf"Вопрос\s+{qnum}\s*(.+?)\nВыберите один ответ:", block, flags=re.DOTALL)
+        if not m_q:
+            continue
+        question_text = m_q.group(1).strip()
+
+        m_ans = re.search(r"Правильный ответ:\s*(.+)$", block, flags=re.DOTALL)
+        if not m_ans:
+            continue
+        correct_raw = m_ans.group(1).strip()
+
+        opts_part = block[m_q.end():m_ans.start()]
+        options = []
+        for line in opts_part.splitlines():
+            line = line.strip()
+            if re.match(r"^[a-zа-я]\.\s+", line, flags=re.IGNORECASE):
+                options.append(re.sub(r"^[a-zа-я]\.\s+", "", line, flags=re.IGNORECASE).strip())
+        if not options:
+            continue
+
+        letter_map = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7, "i": 8, "j": 9, "k": 10,
+                      "а": 0, "б": 1, "в": 2, "г": 3, "д": 4, "е": 5, "ж": 6, "з": 7}
+        correct_idx = None
+        m_letter = re.match(r"^([a-zа-я])[\.\)]?$", correct_raw.lower())
+        if m_letter and m_letter.group(1) in letter_map:
+            idx = letter_map[m_letter.group(1)]
+            if idx < len(options):
+                correct_idx = idx
+
+        if correct_idx is None:
+            normalized = correct_raw.lower().strip()
+            for idx, opt in enumerate(options):
+                if opt.lower().strip() == normalized:
+                    correct_idx = idx
+                    break
+
+        if correct_idx is None:
+            continue
+
+        parsed.append(
+            {
+                "category": 5,
+                "section": "Категория 5",
+                "question_number": qnum,
+                "question": question_text,
+                "options": options,
+                "correct_option_index": correct_idx,
+                "correct_text": options[correct_idx],
+                "source_batch": "bulk_import",
+            }
+        )
+    return parsed
+
+
 @app.route("/")
 def home():
     analytics = build_analytics()
@@ -138,6 +204,23 @@ def save_questions_editor():
         updated_questions.append(updated_q)
 
     save_questions(updated_questions)
+    refresh_questions_cache()
+    return redirect(url_for("questions_editor"))
+
+
+@app.post("/editor/import")
+def import_questions_editor():
+    raw_text = request.form.get("bulk_text", "")
+    parsed = parse_questions_from_text(raw_text)
+    if not parsed:
+        return redirect(url_for("questions_editor"))
+
+    by_number = {q["question_number"]: q for q in QUESTIONS}
+    for q in parsed:
+        by_number[q["question_number"]] = q
+
+    merged = [by_number[k] for k in sorted(by_number.keys())]
+    save_questions(merged)
     refresh_questions_cache()
     return redirect(url_for("questions_editor"))
 
