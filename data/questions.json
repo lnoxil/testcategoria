@@ -1774,16 +1774,16 @@
     "section": "Категория 5",
     "question_number": 111,
     "original_question_number": 111,
-    "question": "Вопрос 111 (требуется заполнение из официального списка категории 5)",
+    "question": "В соответствии с приказом Минтранса России от 31.07.2014г. № 212 «Об утверждении Порядка подготовки сил обеспечения транспортной безопасности» к числу обязательных видов подготовки не относится:",
     "options": [
-      "Вариант a",
-      "Вариант b",
-      "Вариант c",
-      "Вариант d"
+      "специальная",
+      "теоретическая",
+      "тренажерная",
+      "практическая"
     ],
     "correct_option_index": 0,
-    "correct_text": "Вариант a",
-    "source_batch": "pending_fill_cat5"
+    "correct_text": "специальная",
+    "source_batch": "user_fix_111_210_batch"
   },
   {
     "category": 5,
@@ -1798,7 +1798,7 @@
     ],
     "correct_option_index": 3,
     "correct_text": "во всех перечисленных случаях",
-    "source_batch": "user_fix_112_130",
+    "source_batch": "user_fix_111_210_batch",
     "original_question_number": 112
   },
   {
@@ -1814,7 +1814,7 @@
     ],
     "correct_option_index": 2,
     "correct_text": "один раз в 5 лет",
-    "source_batch": "user_fix_112_130",
+    "source_batch": "user_fix_111_210_batch",
     "original_question_number": 113
   },
   {
@@ -1831,7 +1831,7 @@
     ],
     "correct_option_index": 0,
     "correct_text": "ответить на три тематических вопроса, решить две практические задачи, содержащиеся в билетах, и пройти письменный (компьютерный) тест, содержащий не менее 50 вопросов с четырьмя и более многовариантными ответами",
-    "source_batch": "bulk_import"
+    "source_batch": "user_fix_111_210_batch"
   },
   {
     "category": 5,
@@ -1847,7 +1847,7 @@
     ],
     "correct_option_index": 3,
     "correct_text": "во всех перечисленных случаях",
-    "source_batch": "bulk_import"
+    "source_batch": "user_fix_111_210_batch"
   },
   {
     "category": 5,
@@ -1863,7 +1863,7 @@
     ],
     "correct_option_index": 2,
     "correct_text": "при получении субъектом транспортной инфраструктуры или перевозчиком информации об угрозе совершения акта незаконного вмешательства, а также при принятии решения о его проведении по результатам наблюдения и (или) собеседования в целях обеспечения транспортной безопасности",
-    "source_batch": "bulk_import"
+    "source_batch": "user_fix_111_210_batch"
   },
   {
     "category": 5,
@@ -1879,7 +1879,7 @@
     ],
     "correct_option_index": 3,
     "correct_text": "всё вышеперечисленное",
-    "source_batch": "bulk_import"
+    "source_batch": "user_fix_111_210_batch"
   },
   {
     "category": 5,
@@ -1895,7 +1895,7 @@
     ],
     "correct_option_index": 1,
     "correct_text": "по документам установленного образца (проездным билетам) пассажирам и персоналу. Лица, провожающие или встречающие пассажиров, допускаются в перевозочный сектор зоны транспортной безопасности при уровне безопасности N 1 по документам, удостоверяющим личность, без оформления разовых пропусков, при уровнях безопасности N 2 и 3 - по разовым пропускам.",
-    "source_batch": "bulk_import"
+    "source_batch": "user_fix_111_210_batch"
   },
   {
     "category": 5,
@@ -1911,7 +1911,7 @@
     ],
     "correct_option_index": 0,
     "correct_text": "персоналу по документам установленного образца",
-    "source_batch": "bulk_import"
+    "source_batch": "user_fix_111_210_batch"
   },
   {
     "category": 5,
@@ -1927,7 +1927,7 @@
     ],
     "correct_option_index": 2,
     "correct_text": "персоналу по документам установленного образца",
-    "source_batch": "bulk_import"
+    "source_batch": "user_fix_111_210_batch"
   },
   {
     "category": 5,
