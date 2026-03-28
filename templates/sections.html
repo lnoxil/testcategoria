@@ -14,9 +14,9 @@
 
       {% for section in sections %}
       <section class="card" id="topic-{{ loop.index }}">
-        <h3>{{ section.topic }} <small>({{ section.count }})</small></h3>
+        <h3>{{ section["topic"] }} <small>({{ section["count"] }})</small></h3>
         <ol>
-          {% for q in section.items %}
+          {% for q in section["items"] %}
           <li class="section-question-item">
             <div class="section-question-text">{{ q.question }}</div>
             <div class="section-meta">№{{ q.original_question_number or q.question_number }}</div>
@@ -34,7 +34,7 @@
       <p class="muted">Переход к разделам</p>
       <div class="tracker-grid topics-grid">
         {% for section in sections %}
-          <a href="#topic-{{ loop.index }}" class="tracker-cell topics-cell">{{ section.topic }} ({{ section.count }})</a>
+          <a href="#topic-{{ loop.index }}" class="tracker-cell topics-cell">{{ section["topic"] }} ({{ section["count"] }})</a>
         {% endfor %}
       </div>
     </aside>
