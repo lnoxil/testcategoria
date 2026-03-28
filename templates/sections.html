@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Разделы по темам</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+  <main class="container layout">
+    <section>
+      <h1>Разделы вопросов (категории 4 и 5)</h1>
+      <p>Уникальных вопросов после удаления дубликатов: <b>{{ total }}</b></p>
+
+      {% for section in sections %}
+      <section class="card" id="topic-{{ loop.index }}">
+        <h3>{{ section.topic }} <small>({{ section.count }})</small></h3>
+        <ol>
+          {% for q in section.items %}
+          <li class="section-question-item">
+            <div class="section-question-text">{{ q.question }}</div>
+            <div class="section-meta">№{{ q.original_question_number or q.question_number }}</div>
+          </li>
+          {% endfor %}
+        </ol>
+      </section>
+      {% endfor %}
+
+      <a class="btn" href="/">На главную</a>
+    </section>
+
+    <aside class="card tracker">
+      <h3>Темы</h3>
+      <p class="muted">Переход к разделам</p>
+      <div class="tracker-grid topics-grid">
+        {% for section in sections %}
+          <a href="#topic-{{ loop.index }}" class="tracker-cell topics-cell">{{ section.topic }} ({{ section.count }})</a>
+        {% endfor %}
+      </div>
+    </aside>
+  </main>
+</body>
+</html>
