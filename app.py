@@ -72,12 +72,26 @@ def build_analytics() -> dict:
 
     persistent_mistakes_count = sum(1 for _, v in mistake_counts.items() if v > 0)
 
+    section_errors: dict[str, int] = {}
+    for qid_str, count in mistake_counts.items():
+        question = QUESTIONS_BY_ID.get(int(qid_str))
+        if not question:
+            continue
+        bucket_start = _section_bucket(question) * 10 + 1
+        bucket_label = f"{bucket_start}-{bucket_start + 9}"
+        section_errors[bucket_label] = section_errors.get(bucket_label, 0) + count
+
+    sorted_sections = sorted(section_errors.items(), key=lambda row: row[1], reverse=True)
+    recommended_focus = sorted_sections[:3]
+
     return {
         "avg_percent_50": avg_50,
         "top_mistakes": top_mistakes,
         "attempts_total": len(attempts),
         "daily_progress": daily_progress,
         "persistent_mistakes_count": persistent_mistakes_count,
+        "section_errors": sorted_sections,
+        "recommended_focus": recommended_focus,
     }
 
 
@@ -90,6 +104,60 @@ def refresh_questions_cache() -> None:
     QUESTIONS = load_questions()
     QUESTIONS_BY_ID = {q["question_number"]: q for q in QUESTIONS}
 
+
+def _question_original_number(question: dict) -> int:
+    return question.get("original_question_number") or question.get("question_number", 0)
+
+
+def _section_bucket(question: dict) -> int:
+    original = _question_original_number(question)
+    return max(0, (original - 1) // 10)
+
+
+def build_balanced_pool(questions: list[dict], limit: int, exclude_ids: set[int] | None = None) -> list[dict]:
+    exclude_ids = exclude_ids or set()
+    by_bucket: dict[int, list[dict]] = {}
+    for question in questions:
+        by_bucket.setdefault(_section_bucket(question), []).append(question)
+
+    for bucket in by_bucket.values():
+        random.shuffle(bucket)
+
+    ordered_buckets = sorted(by_bucket.keys())
+    selected: list[dict] = []
+    selected_ids: set[int] = set()
+
+    # Первый проход: берём до двух вопросов из каждого блока (1-10, 11-20 и т.д.),
+    # отдавая приоритет вопросам, которые ещё не встречались пользователю.
+    for bucket in ordered_buckets:
+        if len(selected) >= limit:
+            break
+
+        bucket_questions = by_bucket[bucket]
+        fresh = [q for q in bucket_questions if q["question_number"] not in exclude_ids]
+        fallback = [q for q in bucket_questions if q["question_number"] in exclude_ids]
+
+        for candidate in fresh + fallback:
+            qid = candidate["question_number"]
+            if qid in selected_ids:
+                continue
+            selected.append(candidate)
+            selected_ids.add(qid)
+            if len([q for q in selected if _section_bucket(q) == bucket]) >= 2 or len(selected) >= limit:
+                break
+
+    # Второй проход: добираем оставшиеся места, снова с приоритетом неиспользованных вопросов.
+    if len(selected) < limit:
+        remaining = [q for q in questions if q["question_number"] not in selected_ids]
+        random.shuffle(remaining)
+        remaining.sort(key=lambda q: q["question_number"] in exclude_ids)
+        for candidate in remaining:
+            selected.append(candidate)
+            selected_ids.add(candidate["question_number"])
+            if len(selected) >= limit:
+                break
+
+    return selected[:limit]
 
 def parse_questions_from_text(raw_text: str, category: int = 5, section: str | None = None) -> list[dict]:
     section_name = section or f"Категория {category}"
@@ -253,10 +321,9 @@ def start_test():
         pool = [QUESTIONS_BY_ID[i] for i in ids if i in QUESTIONS_BY_ID and QUESTIONS_BY_ID[i].get("category") == selected_category]
         random.shuffle(pool)
     else:
-        pool = category_pool[:]
-        random.shuffle(pool)
         limit = 20 if mode == "quick_20" else 50
-        pool = pool[:limit]
+        recent_ids = set(session.get("recent_question_ids", []))
+        pool = build_balanced_pool(category_pool, limit, exclude_ids=recent_ids)
 
     if not pool:
         return redirect(url_for("home"))
@@ -267,6 +334,28 @@ def start_test():
     session["answers"] = []
     session["mode"] = mode
     session["category"] = selected_category
+    session["is_review"] = False
+    return redirect(url_for("list_test"))
+
+
+
+
+@app.post("/start_followup")
+def start_followup():
+    wrong_ids = session.get("last_wrong_ids", [])
+    if not wrong_ids:
+        return redirect(url_for("home"))
+
+    pool = [QUESTIONS_BY_ID[qid] for qid in wrong_ids if qid in QUESTIONS_BY_ID]
+    if not pool:
+        return redirect(url_for("home"))
+
+    session["test_ids"] = [q["question_number"] for q in pool]
+    session["index"] = 0
+    session["correct"] = 0
+    session["answers"] = []
+    session["mode"] = "followup"
+    session["is_review"] = True
     return redirect(url_for("list_test"))
 
 
@@ -330,27 +419,33 @@ def submit_list():
     total = len(test_ids)
     percent = round((correct / total) * 100) if total else 0
 
-    stats = load_stats()
-    stats.setdefault("attempts", []).append(
-        {
-            "date": date.today().isoformat(),
-            "size": total,
-            "percent": percent,
-            "correct": correct,
-            "wrong": total - correct,
-            "mode": session.get("mode", "common_50"),
-        }
-    )
-    stats.setdefault("mistake_counts", {})
-    for qid in wrong_ids:
-        key = str(qid)
-        stats["mistake_counts"][key] = stats["mistake_counts"].get(key, 0) + 1
-    save_stats(stats)
+    is_review = session.get("is_review", False)
+    if not is_review:
+        stats = load_stats()
+        stats.setdefault("attempts", []).append(
+            {
+                "date": date.today().isoformat(),
+                "size": total,
+                "percent": percent,
+                "correct": correct,
+                "wrong": total - correct,
+                "mode": session.get("mode", "common_50"),
+            }
+        )
+        stats.setdefault("mistake_counts", {})
+        for qid in wrong_ids:
+            key = str(qid)
+            stats["mistake_counts"][key] = stats["mistake_counts"].get(key, 0) + 1
+        save_stats(stats)
 
     session["correct"] = correct
     session["answers"] = answers
     session["mistakes"] = sorted(mistakes)
     session["index"] = len(test_ids)
+    session["last_wrong_ids"] = wrong_ids
+
+    recent_ids = list(dict.fromkeys(session.get("recent_question_ids", []) + test_ids))
+    session["recent_question_ids"] = recent_ids[-500:]
     return redirect(url_for("result"))
 
 
@@ -368,6 +463,8 @@ def result():
         wrong=wrong,
         percent=percent,
         mistakes=len(session.get("mistakes", [])),
+        has_followup=wrong > 0 and not session.get("is_review", False),
+        is_review=session.get("is_review", False),
     )
 
 

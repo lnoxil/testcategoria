@@ -12,36 +12,6 @@
     <p>Всего вопросов в базе: <b>{{ total }}</b></p>
     <p>Вопросов в тренировке над ошибками (накопительно): <b>{{ analytics.persistent_mistakes_count }}</b></p>
 
-    <div class="card">
-      <h3>Аналитика</h3>
-      <p>Средний процент правильных ответов (тесты по 50): <b>{{ analytics.avg_percent_50 }}%</b></p>
-      <p>Всего завершённых тестов: <b>{{ analytics.attempts_total }}</b></p>
-
-      <h4>График прогресса по дням</h4>
-      <div class="daily-grid">
-        {% for d in analytics.daily_progress %}
-          <div class="daily-row">
-            <div class="date">{{ d.date }}</div>
-            <div class="bars">
-              <div class="bar blue" style="width: {{ d.avg_percent }}%">% {{ d.avg_percent }}</div>
-              <div class="bar red" style="width: {{ [d.avg_wrong * 10, 100] | min }}%">ошибки {{ d.avg_wrong }}</div>
-            </div>
-          </div>
-        {% else %}
-          <p>Пока нет завершенных тестов для графика.</p>
-        {% endfor %}
-      </div>
-
-      <h4>Вопросы, где больше всего ошибок:</h4>
-      <ol>
-        {% for item in analytics.top_mistakes %}
-        <li>№{{ item.question_number }} — ошибок: {{ item.count }}</li>
-        {% else %}
-        <li>Пока нет данных.</li>
-        {% endfor %}
-      </ol>
-    </div>
-
     <form method="post" action="/start" class="card">
       <h3>Начать тест</h3>
       <label>Категория
@@ -62,6 +32,62 @@
 
     <div class="card">
       <a class="btn" href="/editor">Открыть редактор вопросов</a>
+    </div>
+
+    <div class="card analytics-card">
+      <h3>Глобальная аналитика</h3>
+      <p>Средний процент правильных ответов (тесты по 50): <b>{{ analytics.avg_percent_50 }}%</b></p>
+      <p>Всего завершённых тестов: <b>{{ analytics.attempts_total }}</b></p>
+
+      <h4>Диаграмма прогресса по дням</h4>
+      <div class="daily-grid">
+        {% for d in analytics.daily_progress %}
+          <div class="daily-row">
+            <div class="date">{{ d.date }}</div>
+            <div class="bars">
+              <div class="bar blue" style="width: {{ d.avg_percent }}%">Успешность {{ d.avg_percent }}%</div>
+              <div class="bar red" style="width: {{ [d.avg_wrong * 10, 100] | min }}%">Ошибки {{ d.avg_wrong }}</div>
+            </div>
+          </div>
+        {% else %}
+          <p>Пока нет завершенных тестов для графика.</p>
+        {% endfor %}
+      </div>
+
+      <h4>ТОП сложных вопросов</h4>
+      <ol>
+        {% for item in analytics.top_mistakes %}
+        <li>№{{ item.question_number }} — ошибок: {{ item.count }}</li>
+        {% else %}
+        <li>Пока нет данных.</li>
+        {% endfor %}
+      </ol>
+
+      <h4>Ошибки по разделам (диапазоны вопросов)</h4>
+      <div class="section-grid">
+        {% for section, count in analytics.section_errors %}
+          <div class="section-row">
+            <div class="section-title">Вопросы {{ section }}</div>
+            <div class="section-bar-wrap">
+              <div class="section-bar" style="width: {{ [count * 8, 100] | min }}%">{{ count }} ошибок</div>
+            </div>
+          </div>
+        {% else %}
+          <p>Пока нет статистики по разделам.</p>
+        {% endfor %}
+      </div>
+
+      {% if analytics.recommended_focus %}
+      <div class="focus-box">
+        <h4>Рекомендация по работе над ошибками</h4>
+        <p>Больше всего ошибок в разделах:
+          {% for section, count in analytics.recommended_focus %}
+            <b>{{ section }}</b> ({{ count }}){% if not loop.last %}, {% endif %}
+          {% endfor %}.
+        </p>
+        <p>Рекомендуем отдельно повторить тесты именно в этих диапазонах вопросов.</p>
+      </div>
+      {% endif %}
     </div>
   </main>
 </body>

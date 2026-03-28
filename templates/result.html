@@ -13,6 +13,19 @@
       <p>Правильных: <b>{{ correct }}</b> из <b>{{ total }}</b> ({{ percent }}%).</p>
       <p>Ошибок: <b>{{ wrong }}</b>.</p>
       <p>Всего вопросов в «над ошибками»: <b>{{ mistakes }}</b>.</p>
+
+      {% if has_followup %}
+      <div class="followup-box">
+        <h3>Разобрать ошибки сейчас?</h3>
+        <p>Нажмите кнопку и сразу получите продолжение теста только по вопросам, где допустили ошибку.</p>
+        <form method="post" action="/start_followup">
+          <button type="submit">Пройти работу над ошибками</button>
+        </form>
+      </div>
+      {% elif is_review %}
+      <p class="muted">✅ Разбор ошибок пройден. Повторно запускать его не нужно.</p>
+      {% endif %}
+
       <a class="btn" href="/">На главную</a>
     </div>
   </main>

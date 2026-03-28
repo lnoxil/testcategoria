@@ -12,22 +12,21 @@
       <h1>Тест списком</h1>
       <p>После выбора вариант фиксируется и изменить ответ уже нельзя.</p>
       <p><b>Категория:</b> {{ category }}</p>
-      <p><b>Режим:</b> {{ 'Тест над ошибками' if mode == 'mistakes' else ('Быстрый 20' if mode == 'quick_20' else 'Общий 50') }}</p>
+      <p><b>Режим:</b> {{ 'Тест над ошибками' if mode == 'mistakes' else ('Разбор ошибок' if mode == 'followup' else ('Быстрый 20' if mode == 'quick_20' else 'Общий 50')) }}</p>
       <p><b>Счетчик:</b> <span id="answeredCount">0</span> / {{ questions|length }}</p>
 
       <form method="post" action="/submit_list" id="listForm">
         {% for q in questions %}
         <section class="card question-card" data-correct="{{ q.correct_option_index }}" data-idx="{{ loop.index }}" id="question-{{ loop.index }}">
-          <div class="meta">Вопрос {{ loop.index }} (№{{ q.original_question_number or q.question_number }})</div>
+          <div class="meta">Вопрос {{ loop.index }} (№{{ q.original_question_number or q.question_number }}) · Блок {{ ((q.original_question_number or q.question_number) - 1) // 10 + 1 }}</div>
+          <div class="feedback feedback-top" aria-live="polite"></div>
           <h3>{{ q.question }}</h3>
 
           {% for opt in q.options %}
-          <label class="option">
+          <label class="option" data-opt-index="{{ loop.index0 }}">
             <input type="radio" name="q_{{ q.question_number }}" value="{{ loop.index0 }}" /> {{ opt }}
           </label>
           {% endfor %}
-
-          <div class="feedback" aria-live="polite"></div>
         </section>
         {% endfor %}
 
@@ -37,7 +36,8 @@
     </section>
 
     <aside class="card tracker">
-      <h3>Панель вопросов</h3>
+      <h3>Подборка вопросов</h3>
+      <p class="muted">Распределение по тесту для удобной навигации.</p>
       <div class="tracker-grid">
         {% for q in questions %}
           <a href="#question-{{ loop.index }}" class="tracker-cell unanswered" id="cell-{{ loop.index }}">{{ loop.index }}</a>
@@ -57,6 +57,7 @@
       const feedback = card.querySelector('.feedback');
       const cell = document.getElementById(`cell-${idx}`);
       const radios = card.querySelectorAll('input[type="radio"]');
+      const options = card.querySelectorAll('.option');
 
       radios.forEach((radio) => {
         radio.addEventListener('change', () => {
@@ -71,6 +72,9 @@
 
           radios.forEach((r) => { if (r !== radio) r.disabled = true; });
 
+          const correctOption = [...options].find((opt) => Number(opt.dataset.optIndex) === correct);
+          if (correctOption) correctOption.classList.add('option-correct');
+
           if (selected === correct) {
             card.classList.add('ok');
             cell.classList.add('cell-ok');
@@ -80,7 +84,7 @@
             card.classList.add('bad');
             cell.classList.add('cell-bad');
             radio.parentElement.classList.add('option-bad');
-            feedback.textContent = `❌ Неверно. Правильный вариант: ${correct + 1}`;
+            feedback.textContent = `❌ Неверно. Правильный ответ подсвечен выше.`;
           }
         });
       });
