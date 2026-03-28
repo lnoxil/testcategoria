@@ -48,3 +48,9 @@ select { width: 100%; box-sizing: border-box; margin-top: 6px; margin-bottom: 10
   .tracker { position: static; }
   .daily-row, .section-row { grid-template-columns: 1fr; }
 }
+
+.topics-grid { grid-template-columns: 1fr; }
+.topics-cell { text-align: left; padding: 10px; font-weight: 600; }
+.section-question-item { margin-bottom: 10px; }
+.section-question-text { margin-bottom: 4px; }
+.section-meta { color: #93c5fd; font-size: 12px; }

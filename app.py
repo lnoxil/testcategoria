@@ -227,6 +227,61 @@ def parse_questions_from_text(raw_text: str, category: int = 5, section: str | N
     return parsed
 
 
+
+
+def _normalize_question_text(text: str) -> str:
+    cleaned = re.sub(r"\s+", " ", (text or "").strip().lower())
+    cleaned = cleaned.replace("ё", "е")
+    return cleaned
+
+
+def _detect_topic(question: dict) -> str:
+    haystack = " ".join([
+        question.get("question", ""),
+        " ".join(question.get("options", [])),
+        question.get("correct_text", ""),
+    ]).lower()
+
+    topic_rules: list[tuple[str, tuple[str, ...]]] = [
+        ("Медицина и первая помощь", ("первая помощь", "сердечно-легочной", "кровотеч", "жгут", "ранен", "ампутац", "перелом", "реанимац")),
+        ("Взрывчатые вещества и опасные предметы", ("взрыв", "взрывчат", "детонатор", "гранат", "тротил", "взрывное устройство", "подозрительн")),
+        ("Оружие и спецсредства", ("оруж", "боеприпас", "патрон", "огнестрель", "наручник", "спецсредств", "гбр")),
+        ("Досмотр и КПП", ("досмотр", "кпп", "металлоиск", "интроскоп", "повторный досмотр", "дополнительный досмотр", "собеседован")),
+        ("Режимы и пропуска", ("пропуск", "внутриобъектов", "пропускной режим", "перевозочный сектор", "технологический сектор", "критический элемент")),
+        ("Законодательство и ответственность", ("федерального закона", "коап", "ук рф", "постановлен", "приказ", "ответственност")),
+        ("Сигналы и ЖД безопасность", ("железнодорож", "сигнал", "контактной сети", "поезд", "междупутье", "рельс")),
+        ("Террористические угрозы и уровни", ("террорист", "уровень безопасности", "анв", "угроза", "незаконного вмешательства")),
+    ]
+
+    for topic, keywords in topic_rules:
+        if any(keyword in haystack for keyword in keywords):
+            return topic
+    return "Прочее"
+
+
+def build_topic_sections(categories: tuple[int, ...] = (4, 5)) -> list[dict]:
+    allowed = [q for q in QUESTIONS if q.get("category") in categories]
+    unique_by_text: dict[str, dict] = {}
+    for q in sorted(allowed, key=lambda x: (x.get("original_question_number") or x.get("question_number", 0), x.get("category", 0))):
+        key = _normalize_question_text(q.get("question", ""))
+        if not key:
+            continue
+        if key in unique_by_text:
+            continue
+        unique_by_text[key] = q
+
+    grouped: dict[str, list[dict]] = {}
+    for q in unique_by_text.values():
+        topic = _detect_topic(q)
+        grouped.setdefault(topic, []).append(q)
+
+    sections = []
+    for topic in sorted(grouped.keys()):
+        items = sorted(grouped[topic], key=lambda x: (x.get("original_question_number") or x.get("question_number", 0)))
+        sections.append({"topic": topic, "items": items, "count": len(items)})
+    return sections
+
+
 @app.route("/")
 def home():
     analytics = build_analytics()
@@ -236,6 +291,15 @@ def home():
         mistakes=len(session.get("mistakes", [])),
         analytics=analytics,
     )
+
+
+
+
+@app.get("/sections")
+def sections_page():
+    sections = build_topic_sections((4, 5))
+    total = sum(section["count"] for section in sections)
+    return render_template("sections.html", sections=sections, total=total)
 
 
 @app.get("/editor")
